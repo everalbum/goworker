@@ -102,7 +102,6 @@ var (
 	namespace      string
 	exitOnComplete bool
 	isStrict       bool
-	useNumber      bool
 )
 
 // Namespace returns the namespace flag for goworker. You
@@ -136,8 +135,6 @@ func init() {
 	flag.StringVar(&namespace, "namespace", "resque:", "the Redis namespace")
 
 	flag.BoolVar(&exitOnComplete, "exit-on-complete", false, "exit when the queue is empty")
-
-	flag.BoolVar(&useNumber, "use-number", false, "use json.Number instead of float64 when decoding numbers in JSON. will default to true soon")
 }
 
 func flags() error {
@@ -151,13 +148,6 @@ func flags() error {
 		return err
 	}
 	isStrict = strings.IndexRune(queuesString, '=') == -1
-
-	if !useNumber {
-		logger.Warn("== DEPRECATION WARNING ==")
-		logger.Warn("  Currently, encoding/json decodes numbers as float64.")
-		logger.Warn("  This can cause numbers to lose precision as they are read from the Resque queue.")
-		logger.Warn("  Set the -use-numbers flag to use json.Number when decoding numbers and remove this warning.")
-	}
 
 	return nil
 }

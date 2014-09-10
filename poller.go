@@ -37,9 +37,7 @@ func (p *poller) getJob(conn *RedisConn) (*job, error) {
 			job := &job{Queue: queue}
 
 			decoder := json.NewDecoder(bytes.NewReader(reply.([]byte)))
-			if useNumber {
-				decoder.UseNumber()
-			}
+			decoder.UseNumber()
 
 			if err := decoder.Decode(&job.Payload); err != nil {
 				return nil, err
