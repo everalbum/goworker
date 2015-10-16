@@ -83,12 +83,12 @@ func (w *worker) logResult(job *job, err error) {
 	var buffer bytes.Buffer
 
 	if err != nil {
-		fmt.Fprintf(&buffer, "result=error error=\"%s\" ", err.Error())
+		fmt.Fprintf(&buffer, "result=error error=%q ", err.Error())
 	} else {
 		fmt.Fprintf(&buffer, "result=success")
 	}
 
-	fmt.Fprintf(&buffer, "queue=%s duration=%dms class=%s args=%s worker=\"%s\"",
+	fmt.Fprintf(&buffer, "queue=%s duration=%dms class=%s args=%s worker=%q",
 		job.Queue,
 		duration,
 		job.Payload.Class,
