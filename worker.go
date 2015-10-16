@@ -78,7 +78,7 @@ func (w *worker) logResult(job *job, err error) {
 	jsonBytes, _ := json.Marshal(job.Payload.Args)
 	jsonString := string(jsonBytes)
 
-	duration := int(time.Since(job.RunAt).Seconds() * 1000)
+	duration := int64(time.Since(job.RunAt) / time.Millisecond)
 
 	var buffer bytes.Buffer
 
