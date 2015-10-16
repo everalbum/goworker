@@ -1,6 +1,7 @@
 package goworker
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,9 +28,13 @@ func (w *worker) MarshalJSON() ([]byte, error) {
 }
 
 func (w *worker) start(conn *RedisConn, job *job) error {
+	runAt := time.Now()
+
+	job.RunAt = runAt
+
 	work := &work{
 		Queue:   job.Queue,
-		RunAt:   time.Now(),
+		RunAt:   runAt,
 		Payload: job.Payload,
 	}
 
@@ -69,7 +74,32 @@ func (w *worker) succeed(conn *RedisConn, job *job) error {
 	return nil
 }
 
+func (w *worker) logResult(job *job, err error) {
+	jsonBytes, _ := json.Marshal(job.Payload.Args)
+	jsonString := string(jsonBytes)
+
+	duration := int(time.Since(job.RunAt).Seconds() * 1000)
+
+	var buffer bytes.Buffer
+
+	if err != nil {
+		buffer.WriteString(fmt.Sprintf("result=error error=\"%s\" ", err.Error()))
+	} else {
+		buffer.WriteString("result=success ")
+	}
+	buffer.WriteString(fmt.Sprintf("queue=%s duration=%dms class=%s args=%s worker=\"%s\"",
+		job.Queue,
+		duration,
+		job.Payload.Class,
+		jsonString,
+		w.Hostname))
+
+	logger.Infof(buffer.String())
+}
+
 func (w *worker) finish(conn *RedisConn, job *job, err error) error {
+	w.logResult(job, err)
+
 	if err != nil {
 		w.fail(conn, job, err)
 	} else {
