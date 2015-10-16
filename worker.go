@@ -83,16 +83,17 @@ func (w *worker) logResult(job *job, err error) {
 	var buffer bytes.Buffer
 
 	if err != nil {
-		buffer.WriteString(fmt.Sprintf("result=error error=\"%s\" ", err.Error()))
+		fmt.Fprintf(&buffer, "result=error error=\"%s\" ", err.Error())
 	} else {
-		buffer.WriteString("result=success ")
+		fmt.Fprintf(&buffer, "result=success")
 	}
-	buffer.WriteString(fmt.Sprintf("queue=%s duration=%dms class=%s args=%s worker=\"%s\"",
+
+	fmt.Fprintf(&buffer, "queue=%s duration=%dms class=%s args=%s worker=\"%s\"",
 		job.Queue,
 		duration,
 		job.Payload.Class,
 		jsonString,
-		w.Hostname))
+		w.Hostname)
 
 	logger.Infof(buffer.String())
 }
