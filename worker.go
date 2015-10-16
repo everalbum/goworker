@@ -88,7 +88,7 @@ func (w *worker) logResult(job *job, err error) {
 		fmt.Fprintf(&buffer, "result=success ")
 	}
 
-	fmt.Fprintf(&buffer, "queue=%s duration=%dms class=%s args=%s worker=%q",
+	fmt.Fprintf(&buffer, "queue=%s duration=%d class=%s args=%s worker=%q",
 		job.Queue,
 		duration,
 		job.Payload.Class,
