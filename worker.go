@@ -85,7 +85,7 @@ func (w *worker) logResult(job *job, err error) {
 	if err != nil {
 		fmt.Fprintf(&buffer, "result=error error=%q ", err.Error())
 	} else {
-		fmt.Fprintf(&buffer, "result=success")
+		fmt.Fprintf(&buffer, "result=success ")
 	}
 
 	fmt.Fprintf(&buffer, "queue=%s duration=%dms class=%s args=%s worker=%q",
