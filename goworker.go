@@ -8,12 +8,12 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/cihub/seelog"
+	"github.com/Sirupsen/logrus"
 	"github.com/youtube/vitess/go/pools"
 )
 
 var (
-	logger seelog.LoggerInterface
+	logger logrus.Logger
 	pool   *pools.ResourcePool
 )
 
@@ -22,11 +22,8 @@ var (
 // that wish to access goworker functions and configuration
 // without actually processing jobs.
 func Init() error {
-	var err error
-	logger, err = seelog.LoggerFromWriterWithMinLevel(os.Stdout, seelog.InfoLvl)
-	if err != nil {
-		return err
-	}
+	logger := logrus.New()
+	logger.Out = os.Stdout
 
 	if err := flags(); err != nil {
 		return err
