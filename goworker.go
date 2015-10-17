@@ -9,11 +9,12 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus/formatters/logstash"
 	"github.com/youtube/vitess/go/pools"
 )
 
 var (
-	logger logrus.Logger
+	logger *logrus.Logger
 	pool   *pools.ResourcePool
 )
 
@@ -22,8 +23,11 @@ var (
 // that wish to access goworker functions and configuration
 // without actually processing jobs.
 func Init() error {
-	logger := logrus.New()
-	logger.Out = os.Stdout
+	logger = &logrus.Logger{
+		Out:       os.Stdout,
+		Level:     logrus.InfoLevel,
+		Formatter: &logstash.LogstashFormatter{},
+	}
 
 	if err := flags(); err != nil {
 		return err

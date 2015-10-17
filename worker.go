@@ -1,12 +1,13 @@
 package goworker
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/Sirupsen/logrus"
 )
 
 type worker struct {
@@ -80,22 +81,19 @@ func (w *worker) logResult(job *job, err error) {
 
 	duration := int64(time.Since(job.RunAt) / time.Millisecond)
 
-	var buffer bytes.Buffer
-
-	if err != nil {
-		fmt.Fprintf(&buffer, "result=error error=%q ", err.Error())
-	} else {
-		fmt.Fprintf(&buffer, "result=success ")
+	fields := logrus.Fields{
+		"queue":    job.Queue,
+		"duration": duration,
+		"class":    job.Payload.Class,
+		"args":     jsonString,
+		"worker":   w.Hostname,
 	}
 
-	fmt.Fprintf(&buffer, "queue=%s duration=%d class=%s args=%s worker=%q",
-		job.Queue,
-		duration,
-		job.Payload.Class,
-		jsonString,
-		w.Hostname)
-
-	logger.Infof(buffer.String())
+	if err != nil {
+		logger.WithFields(fields).Error(err.Error())
+	} else {
+		logger.WithFields(fields).Info("job complete")
+	}
 }
 
 func (w *worker) finish(conn *RedisConn, job *job, err error) error {
