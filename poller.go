@@ -54,7 +54,7 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan *job {
 
 	conn, err := GetConn()
 	if err != nil {
-		logger.Criticalf("Error on getting connection in poller %s", p)
+		logger.Errorf("Error on getting connection in poller %s", p)
 		close(jobs)
 		return jobs
 	} else {
@@ -69,7 +69,7 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan *job {
 
 			conn, err := GetConn()
 			if err != nil {
-				logger.Criticalf("Error on getting connection in poller %s", p)
+				logger.Errorf("Error on getting connection in poller %s", p)
 				return
 			} else {
 				p.finish(conn)
@@ -85,13 +85,13 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan *job {
 			default:
 				conn, err := GetConn()
 				if err != nil {
-					logger.Criticalf("Error on getting connection in poller %s", p)
+					logger.Errorf("Error on getting connection in poller %s", p)
 					return
 				}
 
 				job, err := p.getJob(conn)
 				if err != nil {
-					logger.Criticalf("Error on %v getting job from %v: %v", p, p.Queues, err)
+					logger.Errorf("Error on %v getting job from %v: %v", p, p.Queues, err)
 					PutConn(conn)
 					return
 				}
@@ -104,12 +104,12 @@ func (p *poller) poll(interval time.Duration, quit <-chan bool) <-chan *job {
 					case <-quit:
 						buf, err := json.Marshal(job.Payload)
 						if err != nil {
-							logger.Criticalf("Error requeueing %v: %v", job, err)
+							logger.Errorf("Error requeueing %v: %v", job, err)
 							return
 						}
 						conn, err := GetConn()
 						if err != nil {
-							logger.Criticalf("Error on getting connection in poller %s", p)
+							logger.Errorf("Error on getting connection in poller %s", p)
 							return
 						}
 
