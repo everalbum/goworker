@@ -76,16 +76,13 @@ func (w *worker) succeed(conn *RedisConn, job *job) error {
 }
 
 func (w *worker) logResult(job *job, err error) {
-	jsonBytes, _ := json.Marshal(job.Payload.Args)
-	jsonString := string(jsonBytes)
-
 	duration := int64(time.Since(job.RunAt) / time.Millisecond)
 
 	fields := logrus.Fields{
 		"queue":    job.Queue,
 		"duration": duration,
 		"class":    job.Payload.Class,
-		"args":     jsonString,
+		"args":     job.Payload.Args,
 		"worker":   w.Hostname,
 	}
 
