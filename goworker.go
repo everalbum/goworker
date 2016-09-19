@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/Sirupsen/logrus/formatters/logstash"
 	"github.com/youtube/vitess/go/pools"
 )
 
@@ -24,9 +23,8 @@ var (
 // without actually processing jobs.
 func Init() error {
 	logger = &logrus.Logger{
-		Out:       os.Stdout,
-		Level:     logrus.InfoLevel,
-		Formatter: &logstash.LogstashFormatter{},
+		Out:   os.Stdout,
+		Level: logrus.InfoLevel,
 	}
 
 	if err := flags(); err != nil {
