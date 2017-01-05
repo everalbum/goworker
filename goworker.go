@@ -22,10 +22,8 @@ var (
 // that wish to access goworker functions and configuration
 // without actually processing jobs.
 func Init() error {
-	logger = &logrus.Logger{
-		Out:   os.Stdout,
-		Level: logrus.InfoLevel,
-	}
+	logger = logrus.New()
+	logger.Out = os.Stdout
 
 	if err := flags(); err != nil {
 		return err
