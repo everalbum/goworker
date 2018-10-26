@@ -1,5 +1,10 @@
 package goworker
 
+import (
+	"encoding/json"
+	"fmt"
+)
+
 var (
 	workers map[string]workerFunc
 )
@@ -14,4 +19,38 @@ func init() {
 // arbitrary array of interfaces as arguments.
 func Register(class string, worker workerFunc) {
 	workers[class] = worker
+}
+
+func Enqueue(job *Job) error {
+	err := Init()
+	if err != nil {
+		return err
+	}
+
+	conn, err := GetConn()
+	if err != nil {
+		logger.Errorf("Error on getting connection on enqueue")
+		return err
+	}
+	defer PutConn(conn)
+
+	buffer, err := json.Marshal(job.Payload)
+	if err != nil {
+		logger.Errorf("Cant marshal payload on enqueue")
+		return err
+	}
+
+	err = conn.Send("RPUSH", fmt.Sprintf("%squeue:%s", workerSettings.Namespace, job.Queue), buffer)
+	if err != nil {
+		logger.Errorf("Cant push to queue")
+		return err
+	}
+
+	err = conn.Send("SADD", fmt.Sprintf("%squeues", workerSettings.Namespace), job.Queue)
+	if err != nil {
+		logger.Errorf("Cant register queue to list of use queues")
+		return err
+	}
+
+	return conn.Flush()
 }

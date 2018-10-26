@@ -1,6 +1,7 @@
 # goworker
 
 [![Build Status](https://travis-ci.org/benmanns/goworker.png?branch=master)](https://travis-ci.org/benmanns/goworker)
+[![GoDoc](https://godoc.org/github.com/benmanns/goworker?status.svg)](https://godoc.org/github.com/benmanns/goworker)
 
 goworker is a Resque-compatible, Go-based background worker. It allows you to push jobs into a queue using an expressive language like Ruby while harnessing the efficiency and concurrency of Go to minimize job latency and cost.
 
@@ -89,6 +90,43 @@ func main() {
 }
 ```
 
+Here is a simple worker with settings:
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/benmanns/goworker"
+)
+
+func myFunc(queue string, args ...interface{}) error {
+	fmt.Printf("From %s, %v\n", queue, args)
+	return nil
+}
+
+func init() {
+	settings := goworker.WorkerSettings{
+		URI:            "redis://localhost:6379/",
+		Connections:    100,
+		Queues:         []string{"myqueue", "delimited", "queues"},
+		UseNumber:      true,
+		ExitOnComplete: false,
+		Concurrency:    2,
+		Namespace:      "resque:",
+		Interval:       5.0,
+	}
+	goworker.SetSettings(settings)
+	goworker.Register("MyClass", myFunc)
+}
+
+func main() {
+	if err := goworker.Work(); err != nil {
+		fmt.Println("Error:", err)
+	}
+}
+```
+
 goworker worker functions receive the queue they are serving and a slice of interfaces. To use them as parameters to other functions, use Go type assertions to convert them into usable types.
 
 ```go
@@ -135,6 +173,18 @@ end
 100.times do
   Resque.enqueue MyClass, ['hi', 'there']
 end
+```
+
+or
+
+```golang
+goworker.Enqueue(&goworker.Job{
+    Queue: "myqueue",
+    Payload: goworker.Payload{
+        Class: "MyClass",
+        Args: []interface{}{"hi", "there"},
+    },
+})
 ```
 
 ## Flags

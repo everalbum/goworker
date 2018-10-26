@@ -1,36 +1,66 @@
 package goworker
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"sync"
 	"time"
-
-	"golang.org/x/net/context"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/youtube/vitess/go/pools"
 )
 
 var (
-	logger *logrus.Logger
-	pool   *pools.ResourcePool
+	logger      *logrus.Logger
+	pool        *pools.ResourcePool
+	ctx         context.Context
+	initMutex   sync.Mutex
+	initialized bool
 )
+
+var workerSettings WorkerSettings
+
+type WorkerSettings struct {
+	QueuesString   string
+	Queues         queuesFlag
+	IntervalFloat  float64
+	Interval       intervalFlag
+	Concurrency    int
+	Connections    int
+	URI            string
+	Namespace      string
+	ExitOnComplete bool
+	IsStrict       bool
+	UseNumber      bool
+	SkipTLSVerify  bool
+	TLSCertPath    string
+}
+
+func SetSettings(settings WorkerSettings) {
+	workerSettings = settings
+}
 
 // Init initializes the goworker process. This will be
 // called by the Work function, but may be used by programs
 // that wish to access goworker functions and configuration
 // without actually processing jobs.
 func Init() error {
-	logger = logrus.New()
-	logger.Out = os.Stdout
+	initMutex.Lock()
+	defer initMutex.Unlock()
+	if !initialized {
+		logger = logrus.New()
+		logger.Out = os.Stdout
 
-	if err := flags(); err != nil {
-		return err
+		if err := flags(); err != nil {
+			return err
+		}
+		ctx = context.Background()
+
+		pool = newRedisPool(workerSettings.URI, workerSettings.Connections, workerSettings.Connections, time.Minute)
+
+		initialized = true
 	}
-
-	pool = newRedisPool(uri, connections, connections, time.Minute)
-
 	return nil
 }
 
@@ -41,7 +71,7 @@ func Init() error {
 // while they wait for an available connection. Expect this
 // API to change drastically.
 func GetConn() (*RedisConn, error) {
-	resource, err := pool.Get(context.Background())
+	resource, err := pool.Get(ctx)
 
 	if err != nil {
 		return nil, err
@@ -69,7 +99,12 @@ func PutConn(conn *RedisConn) {
 //	}
 //	defer goworker.Close()
 func Close() {
-	pool.Close()
+	initMutex.Lock()
+	defer initMutex.Unlock()
+	if initialized {
+		pool.Close()
+		initialized = false
+	}
 }
 
 // Work starts the goworker process. Check for errors in
@@ -86,16 +121,19 @@ func Work() error {
 
 	quit := signals()
 
-	poller, err := newPoller(queues, isStrict)
+	poller, err := newPoller(workerSettings.Queues, workerSettings.IsStrict)
 	if err != nil {
 		return err
 	}
-	jobs := poller.poll(time.Duration(interval), quit)
+	jobs, err := poller.poll(time.Duration(workerSettings.Interval), quit)
+	if err != nil {
+		return err
+	}
 
 	var monitor sync.WaitGroup
 
-	for id := 0; id < concurrency; id++ {
-		worker, err := newWorker(strconv.Itoa(id), queues)
+	for id := 0; id < workerSettings.Concurrency; id++ {
+		worker, err := newWorker(strconv.Itoa(id), workerSettings.Queues)
 		if err != nil {
 			return err
 		}

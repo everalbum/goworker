@@ -2,7 +2,7 @@ package goworker
 
 import "time"
 
-type job struct {
+type Job struct {
 	Queue   string
 	Payload Payload
 	RunAt   time.Time
